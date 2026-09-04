@@ -1,7 +1,7 @@
 <resources>
     <style name="Theme.GeminiApp" parent="Theme.AppCompat.NoActionBar">
-        <item name="android:windowBackground">#121214</item>
-        <item name="android:statusBarColor">#121214</item>
-        <item name="android:navigationBarColor">#121214</item>
+        <item name="android:windowBackground">@color/bg_dark</item>
+        <item name="android:statusBarColor">@color/bg_dark</item>
+        <item name="android:navigationBarColor">@color/bg_dark</item>
     </style>
 </resources>
