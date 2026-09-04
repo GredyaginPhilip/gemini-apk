@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Всё важное о нужном</title>
+    <link rel="icon" type="image/png" href="image/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="image/favicon.svg" />
+    <link rel="shortcut icon" href="image/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="image/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="Всё важное о нужном" />
+    <link rel="manifest" href="image/site.webmanifest" />
+
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        html, body { width: 100%; max-width: 100vw; overflow-x: hidden; background-color: #f1f5f9; color: #1e293b; display: flex; flex-direction: column; min-height: 100vh; -webkit-font-smoothing: antialiased; }
+        .header { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: #ffffff; text-align: center; padding: 2.75rem 1rem; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.15); position: relative; }
+        .header h1 { font-size: 2.2rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 0.6rem; }
+        .header p { font-size: 1.05rem; color: #94a3b8; max-width: 600px; margin: 0 auto; line-height: 1.5; }
+        .container { width: 100%; max-width: 900px; margin: 0 auto; padding: 2rem 1rem; flex: 1; }
+        .search-box { margin-bottom: 2rem; width: 100%; }
+        .search-wrapper { position: relative; width: 100%; max-width: 650px; margin: 0 auto; }
+        .search-wrapper input { width: 100%; padding: 1rem 1.25rem 1rem 3rem; font-size: 1rem; background-color: #ffffff; border: 1px solid #cbd5e1; border-radius: 12px; outline: none; color: #1e293b; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03); transition: all 0.25s ease; }
+        .search-wrapper input:focus { border-color: #3b82f6; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15); }
+        .search-icon { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #94a3b8; pointer-events: none; display: flex; align-items: center; }
+        .articles-grid { display: flex; flex-direction: column; gap: 1.5rem; width: 100%; }
+        .card { background-color: #ffffff; border-radius: 16px; padding: 1.75rem; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04); border: 1px solid #e2e8f0; display: flex; flex-direction: column; transition: transform 0.2s ease, box-shadow 0.2s ease; width: 100%; overflow: hidden; }
+        .card:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0, 0, 0, 0.07); }
+        .card h2 { color: #0f172a; margin-bottom: 1rem; font-size: 1.45rem; font-weight: 700; display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+        .card-content { line-height: 1.65; font-size: 1rem; color: #334155; margin-bottom: 1.25rem; }
+        .card-content p { margin-bottom: 0.75rem; }
+        .card-content p:last-child { margin-bottom: 0; }
+        .card-content ul { padding-left: 1.25rem; margin-top: 0.6rem; }
+        .card-content li { margin-bottom: 0.5rem; }
+        .card-links { display: flex; flex-wrap: wrap; gap: 12px; margin-top: auto; justify-content: flex-start; }
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: #ffffff; text-decoration: none; padding: 0.75rem 1.4rem; border-radius: 10px; font-weight: 600; font-size: 0.95rem; border: none; cursor: pointer; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25); transition: all 0.2s ease; max-width: 100%; text-align: center; }
+        .btn:hover { background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); transform: translateY(-1px); box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35); }
+        .btn-success { background: linear-gradient(135deg, #10b981 0%, #047857 100%); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25); }
+        .btn-success:hover { background: linear-gradient(135deg, #059669 0%, #065f46 100%); box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35); }
+        .keys-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; width: 100%; }
+        .key-item { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem; transition: all 0.2s ease; width: 100%; }
+        .key-item:hover { border-color: #cbd5e1; background-color: #f1f5f9; }
+        .key-header { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; width: 100%; }
+        .key-badge { display: inline-flex; align-items: center; gap: 6px; background: #1e293b; color: #ffffff; font-size: 0.85rem; font-weight: 700; padding: 0.3rem 0.75rem; border-radius: 6px; letter-spacing: 0.3px; }
+        .status-dot { width: 8px; height: 8px; background-color: #10b981; border-radius: 50%; box-shadow: 0 0 6px #10b981; }
+        .key-subtext { font-size: 0.8rem; color: #64748b; }
+        .key-box { display: flex; align-items: center; justify-content: space-between; background: #ffffff; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 0.65rem 0.85rem; gap: 0.75rem; cursor: pointer; width: 100%; min-width: 0; transition: all 0.2s ease; }
+        .key-box:hover { border-color: #3b82f6; background: #fafafa; }
+        .key-text { font-family: 'Consolas', 'Monaco', monospace; font-size: 0.85rem; color: #475569; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; }
+        .key-box-icon { color: #94a3b8; flex-shrink: 0; display: flex; align-items: center; }
+        .btn-copy { width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: #ffffff; border: none; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 3px 10px rgba(37, 99, 235, 0.2); }
+        .btn-copy:hover { background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); transform: translateY(-1px); box-shadow: 0 5px 14px rgba(37, 99, 235, 0.3); }
+        .btn-copy.copied { background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3) !important; }
+        .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px); background: #0f172a; color: #ffffff; padding: 0.8rem 1.6rem; border-radius: 30px; font-size: 0.95rem; font-weight: 600; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25); opacity: 0; visibility: hidden; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 9999; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; visibility: visible; }
+        footer { background-color: #0f172a; color: #94a3b8; text-align: center; padding: 1.75rem 1rem; margin-top: auto; font-size: 0.9rem; }
+        @media (max-width: 600px) {
+            .header { padding: 2.2rem 1rem; } .header h1 { font-size: 1.75rem; } .header p { font-size: 0.95rem; }
+            .container { padding: 1.25rem 0.85rem; } .card { padding: 1.25rem 1rem; border-radius: 14px; }
+            .card h2 { font-size: 1.3rem; } .card-links { flex-direction: column; } .btn { width: 100%; } .key-item { padding: 0.85rem; }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>Всё важное о нужном</h1>
+        <p>Сборник полезной информации и проверенных дистрибутивов</p>
+    </header>
+
+    <main class="container">
+        <div class="search-box">
+            <div class="search-wrapper">
+                <span class="search-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                </span>
+                <input type="text" id="searchInput" placeholder="Поиск по статьям, ключам и Gemini...">
+            </div>
+        </div>
+
+        <div class="articles-grid" id="articlesList">
+            <article class="card">
+                <h2>
+                    <span class="key-badge" style="background:#2563eb;">
+                        <span class="status-dot"></span>
+                        AI Шлюз
+                    </span>
+                    Gemini 3.8 Flash (Без VPN)
+                </h2>
+                <div class="card-content">
+                    <p>Персональный доступ к новейшим моделям Google Gemini поколения 3.x напрямую через выделенный сервер без использования VPN. Включает потоковую передачу ответов, анализ медиафайлов и видео до 200 МБ, автодозвон при перегрузках и синхронизацию с местным временем (Ижевск, UTC+4).</p>
+                    <ul>
+                        <li><b>Веб-интерфейс:</b> мгновенный доступ через браузер или запуск в режиме PWA на главном экране.</li>
+                        <li><b>Android-клиент:</b> автономное нативное приложение без рамок браузера.</li>
+                    </ul>
+                </div>
+                <div class="card-links">
+                    <a href="/chat" class="btn btn-success">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                        Открыть онлайн-чат
+                    </a>
+                    <a href="/gemini.apk" class="btn">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        Скачать Android APK
+                    </a>
+                </div>
+            </article>
+
+            <article class="card">
+                <h2>Amnezia VPN</h2>
+                <div class="card-content">
+                    <p>Бесплатный клиент с открытым исходным кодом для создания собственного VPN на личном сервере. Поддерживает современные протоколы (OpenVPN, WireGuard, Xray и собственный AmneziaWG), отлично справляется с обходом блокировок и настраивается в пару кликов без глубоких технических знаний.</p>
+                </div>
+                <div class="card-links">
+                    <a href="https://github.com/amnezia-vpn/amnezia-client" target="_blank" class="btn">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        Скачать клиент (GitHub)
+                    </a>
+                </div>
+            </article>
+
+            <article class="card">
+                <h2>Ключи доступа (Amnezia VPN)</h2>
+                <div class="card-content">
+                    <p>Готовые конфигурации для подключения. Нажмите на ключ или кнопку <b>«Скопировать ключ»</b>, затем откройте приложение Amnezia VPN и вставьте его.</p>
+                    <div class="keys-list" id="keysList">
+                        <p style="color: #64748b; font-size: 0.9rem;">Загрузка ключей из базы...</p>
+                    </div>
+                </div>
+            </article>
+
+            <article class="card">
+                <h2>Загрузка видео с YouTube (Portable)</h2>
+                <div class="card-content">
+                    <p>Бесплатные программы с графическим интерфейсом для скачивания видео и музыки в максимальном качестве. Не требуют установки Python и работают прямо из папки (Portable-версии на базе мощного yt-dlp).</p>
+                    <ul>
+                        <li><b>Stacher</b> — красивая и современная оболочка. При первом запуске сама докачает нужные компоненты (на сайте выбирайте Portable ZIP).</li>
+                        <li><b>yt-dlg</b> — более простой и классический интерфейс (на сайте ищите Portable .zip архив).</li>
+                    </ul>
+                </div>
+                <div class="card-links">
+                    <a href="https://stacher.io/" target="_blank" class="btn">Сайт Stacher</a>
+                    <a href="https://yt-dlg.github.io/yt-dlg/" target="_blank" class="btn">Сайт yt-dlg</a>
+                </div>
+            </article>
+
+            <article class="card">
+                <h2>Инструменты веб-разработчика</h2>
+                <div class="card-content">
+                    <p>Программы для написания кода. Быстрые, легковесные и с поддержкой тысяч плагинов для HTML, CSS и JS.</p>
+                </div>
+                <div class="card-links">
+                    <a href="https://code.visualstudio.com/" target="_blank" class="btn">Скачать VS Code</a>
+                </div>
+            </article>
+
+            <article class="card">
+                <h2>Полезная информация: Горячие клавиши</h2>
+                <div class="card-content">
+                    <p>Статья-шпаргалка. Сочетания клавиш Windows, которые ускорят вашу работу за компьютером в несколько раз.</p>
+                    <ul>
+                        <li><b>Win + D</b> - свернуть все окна</li>
+                        <li><b>Win + Shift + S</b> - сделать скриншот</li>
+                        <li><b>Ctrl + Shift + Esc</b> - диспетчер задач</li>
+                    </ul>
+                </div>
+            </article>
+        </div>
+    </main>
+
+    <div id="toast" class="toast">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+        <span>Ключ скопирован в буфер!</span>
+    </div>
+
+    <footer>
+        <p>&copy; 2026 Всё важное о нужном. Сделано с душой.</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchInput = document.getElementById('searchInput');
+            const toast = document.getElementById('toast');
+            const keysList = document.getElementById('keysList');
+            let toastTimeout = null;
+
+            function showToast(message) {
+                if (toastTimeout) clearTimeout(toastTimeout);
+                toast.querySelector('span').textContent = message || 'Ключ скопирован в буфер!';
+                toast.classList.add('show');
+                toastTimeout = setTimeout(() => { toast.classList.remove('show'); }, 2500);
+            }
+
+            function copyKey(text, btnElement) {
+                const handleSuccess = () => {
+                    if (btnElement) {
+                        const span = btnElement.querySelector('span');
+                        const originalText = span ? span.textContent : btnElement.textContent;
+                        if (span) span.textContent = 'Скопировано!';
+                        btnElement.classList.add('copied');
+                        setTimeout(() => {
+                            if (span) span.textContent = originalText;
+                            btnElement.classList.remove('copied');
+                        }, 2000);
+                    }
+                    showToast('Ключ скопирован в буфер обмена!');
+                };
+
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(text).then(handleSuccess).catch(() => { fallbackCopy(text, handleSuccess); });
+                } else {
+                    fallbackCopy(text, handleSuccess);
+                }
+            }
+
+            function fallbackCopy(text, callback) {
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                textArea.style.position = 'fixed';
+                textArea.style.left = '-999999px';
+                textArea.style.top = '-999999px';
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    callback();
+                } catch (err) {
+                    alert('Пожалуйста, выделите и скопируйте ключ вручную.');
+                }
+                document.body.removeChild(textArea);
+            }
+
+            function escapeHtml(string) {
+                const entityMap = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+                return String(string).replace(/[&<>"']/g, s => entityMap[s]);
+            }
+
+            function bindKeyEvents() {
+                document.querySelectorAll('.btn-copy').forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        copyKey(this.getAttribute('data-key'), this);
+                    });
+                });
+
+                document.querySelectorAll('.key-box').forEach(box => {
+                    box.addEventListener('click', function() {
+                        const parent = this.closest('.key-item');
+                        const btn = parent.querySelector('.btn-copy');
+                        copyKey(btn.getAttribute('data-key'), btn);
+                    });
+                });
+            }
+
+            async function loadKeys() {
+                try {
+                    const res = await fetch('/api/keys');
+                    if (!res.ok) throw new Error('Ошибка сервера');
+                    const keys = await res.json();
+
+                    if (!keys || keys.length === 0) {
+                        keysList.innerHTML = '<p style="color: #64748b; font-size: 0.9rem;">Нет доступных ключей.</p>';
+                        return;
+                    }
+
+                    keysList.innerHTML = keys.map(k => `
+                        <div class="key-item">
+                            <div class="key-header">
+                                <span class="key-badge">
+                                    <span class="status-dot"></span>
+                                    ${escapeHtml(k.badge)}
+                                </span>
+                                <span class="key-subtext">${escapeHtml(k.status || 'Готов к работе')}</span>
+                            </div>
+                            
+                            <div class="key-box" title="Нажмите, чтобы скопировать">
+                                <span class="key-text">${escapeHtml(k.key)}</span>
+                                <span class="key-box-icon">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                    </svg>
+                                </span>
+                            </div>
+
+                            <button class="btn-copy" data-key="${escapeHtml(k.key)}">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                </svg>
+                                <span>Скопировать ключ</span>
+                            </button>
+                        </div>
+                    `).join('');
+
+                    bindKeyEvents();
+                } catch (err) {
+                    keysList.innerHTML = '<p style="color: #ef4444; font-size: 0.9rem;">Не удалось загрузить ключи.</p>';
+                }
+            }
+
+            searchInput.addEventListener('input', function() {
+                const searchQuery = this.value.toLowerCase().trim();
+                const articles = document.querySelectorAll('.card');
+                articles.forEach(article => {
+                    const text = article.innerText.toLowerCase();
+                    article.style.display = text.includes(searchQuery) ? 'flex' : 'none';
+                });
+            });
+
+            loadKeys();
+        });
+    </script>
+</body>
+</html>

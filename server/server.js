@@ -1,34 +1,18 @@
-/* ============================================================================
- * ФАЙЛ: /var/www/gemini-app/server.js
- * ВЕРСИЯ: 1.0.8
- * ПОСЛЕДНЕЕ ОБНОВЛЕНИЕ: 2026-09-04 03:55:00 (UTC+4, Ижевск)
- * 
- * ИСТОРИЯ ИЗМЕНЕНИЙ (CHANGELOG):
- * ----------------------------------------------------------------------------
- * 2026-09-04 03:55 | v1.0.8 | Внедрена динамическая инъекция текущей даты и времени (UTC+4, Ижевск) в System Instruction
- * 2026-09-04 03:54 | v1.0.7 | Поддержка полного каталога моделей Gemini 3.x и улучшенный дозвон
- * 2026-09-04 03:50 | v1.0.6 | Добавлен jitter к задержкам дозвона, поддержка динамического выбора модели из клиента
- * 2026-09-04 03:48 | v1.0.5 | Умный обход 429: автоматическое снятие инструмента поиска при нулевой квоте Grounding
- * 2026-09-04 03:46 | v1.0.4 | Добавлено детальное логирование кода и ответа Google, интервал 4с для избежания 429
- * 2026-09-04 03:42 | v1.0.3 | Включен Google Search Tool, MAX_RETRIES установлен на 100, лимит json 50mb
- * 2026-09-04 03:40 | v1.0.2 | Убран fallback, внедрен настойчивый цикл дозвона (12 попыток) с SSE-уведомлениями
- * 2026-09-04 03:38 | v1.0.1 | Добавлен auto-retry при 503 и auto-failover на резервную модель
- * 2026-09-04 03:32 | v1.0.0 | Первоначальный релиз
- * ============================================================================ */
-
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const MAX_RETRIES = 100;
+const KEYS_FILE_PATH = path.join(__dirname, 'keys.json');
 
 app.use(cors());
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
+app.use(express.json({ limit: '200mb' }));
+app.use(express.urlencoded({ limit: '200mb', extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 function getRandomDelay(minMs, maxMs) {
@@ -51,6 +35,43 @@ function getCurrentDateTimeString() {
     second: '2-digit'
   });
   return formatter.format(new Date());
+}
+
+app.get('/api/keys', (req, res) => {
+  try {
+    if (fs.existsSync(KEYS_FILE_PATH)) {
+      const data = fs.readFileSync(KEYS_FILE_PATH, 'utf-8');
+      const keys = JSON.parse(data);
+      return res.json(keys);
+    } else {
+      return res.json([]);
+    }
+  } catch (err) {
+    console.error('[Keys DB Error]:', err.message);
+    return res.status(500).json({ error: 'Ошибка чтения базы ключей' });
+  }
+});
+
+async function uploadToGeminiFileApi(buffer, mimeType, displayName) {
+  const uploadUrl = `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${GEMINI_API_KEY}`;
+  const response = await fetch(uploadUrl, {
+    method: 'POST',
+    headers: {
+      'X-Goog-Upload-Command': 'start, upload, finalize',
+      'X-Goog-Upload-Header-Content-Length': buffer.length.toString(),
+      'X-Goog-Upload-Header-Content-Type': mimeType,
+      'Content-Type': mimeType
+    },
+    body: buffer
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`Ошибка загрузки в Google File API (${response.status}): ${err}`);
+  }
+
+  const data = await response.json();
+  return data.file.uri;
 }
 
 async function requestStream(targetModel, payload) {
@@ -78,18 +99,40 @@ app.post('/api/chat', async (req, res) => {
   res.setHeader('Connection', 'keep-alive');
   res.setHeader('X-Accel-Buffering', 'no');
 
+  try {
+    for (const msg of contents) {
+      if (Array.isArray(msg.parts)) {
+        for (let i = 0; i < msg.parts.length; i++) {
+          const part = msg.parts[i];
+          if (part.inlineData && part.inlineData.data) {
+            const rawBuffer = Buffer.from(part.inlineData.data, 'base64');
+            if (rawBuffer.length > 12 * 1024 * 1024 || part.inlineData.mimeType.startsWith('video/')) {
+              res.write(`data: ${JSON.stringify({ statusText: `Загрузка видеофайла в облачный шлюз Google (${Math.round(rawBuffer.length / 1024 / 1024)} МБ)...` })}\n\n`);
+              const fileUri = await uploadToGeminiFileApi(rawBuffer, part.inlineData.mimeType, 'attachment');
+              msg.parts[i] = {
+                fileData: {
+                  fileUri: fileUri,
+                  mimeType: part.inlineData.mimeType
+                }
+              };
+            }
+          }
+        }
+      }
+    }
+  } catch (fileUploadErr) {
+    res.write(`data: ${JSON.stringify({ error: `Сбой загрузки медиафайла: ${fileUploadErr.message}` })}\n\n`);
+    res.write('data: [DONE]\n\n');
+    return res.end();
+  }
+
   const currentLocalTime = getCurrentDateTimeString();
   const timeAwareInstruction = `ТОЧНОЕ ТЕКУЩЕЕ ВРЕМЯ И ДАТА: ${currentLocalTime} (Часовой пояс UTC+4, Ижевск). Ты точно знаешь сегодняшнюю дату, день недели и текущий год. Всегда опирайся на эти данные при вопросах о календаре, времени и днях недели. ${systemInstruction || 'Отвечай структурированно, понятно и лаконично.'}`;
 
   const requestPayload = {
     contents: contents,
-    systemInstruction: {
-      parts: [{ text: timeAwareInstruction }]
-    },
-    generationConfig: {
-      temperature: 0.7,
-      maxOutputTokens: 8192
-    }
+    systemInstruction: { parts: [{ text: timeAwareInstruction }] },
+    generationConfig: { temperature: 0.7, maxOutputTokens: 8192 }
   };
 
   if (enableSearch) {
@@ -107,16 +150,12 @@ app.post('/api/chat', async (req, res) => {
       try {
         upstreamResponse = await requestStream(model, requestPayload);
       } catch (networkErr) {
-        console.error(`[Сетевой сбой] ${networkErr.message}`);
         res.write(`data: ${JSON.stringify({ statusText: `Сетевой сбой. Дозваниваюсь к ${model}... Попытка ${attempt}/${MAX_RETRIES}` })}\n\n`);
         await delay(getRandomDelay(2000, 3500));
         continue;
       }
 
-      console.log(`[Google API] Модель: ${model} | Попытка ${attempt}/${MAX_RETRIES} -> Статус: ${upstreamResponse.status}`);
-
       if (upstreamResponse.status === 429 && requestPayload.tools && !searchStripped) {
-        console.log('[Квота поиска 429] Отключаем google_search и повторяем запрос...');
         delete requestPayload.tools;
         searchStripped = true;
         res.write(`data: ${JSON.stringify({ statusText: `Поиск Google недоступен на бесплатном ключе. Отправляю напрямую в ${model}...` })}\n\n`);
@@ -135,7 +174,6 @@ app.post('/api/chat', async (req, res) => {
 
     if (!isReady || !upstreamResponse || !upstreamResponse.ok) {
       const errorDetails = upstreamResponse ? await upstreamResponse.text() : 'Таймаут подключения';
-      console.error(`[Ошибка Gemini API]:`, errorDetails);
       res.write(`data: ${JSON.stringify({ error: `Сбой связи с ${model} (${upstreamResponse?.status}): ${errorDetails}` })}\n\n`);
       res.write('data: [DONE]\n\n');
       return res.end();
@@ -174,7 +212,6 @@ app.post('/api/chat', async (req, res) => {
     res.write('data: [DONE]\n\n');
     res.end();
   } catch (err) {
-    console.error('[Внутренняя ошибка]', err);
     res.write(`data: ${JSON.stringify({ error: 'Ошибка сервера: ' + err.message })}\n\n`);
     res.write('data: [DONE]\n\n');
     res.end();
@@ -186,10 +223,11 @@ app.get('/api/health', (req, res) => {
     status: 'ok',
     currentTimeIzhevsk: getCurrentDateTimeString(),
     maxRetries: MAX_RETRIES,
+    fileApiEnabled: true,
     time: new Date().toISOString()
   });
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Шлюз Gemini запущен на порту ${PORT}. Актуальное время инициализировано.`);
+  console.log(`Шлюз запущен на порту ${PORT}. База ключей подключена.`);
 });
